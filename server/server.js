@@ -19,9 +19,9 @@ app.use(
 app.get('/', (request, response) => {
   response.json({ info: 'Node.js, Express, and Postgres API' })
 })
-app.get('/reviews/:id', db.getReviewByID);
-app.get('/reviews/meta');
-app.post('/reviews');
+app.get('/reviews/:id/:count?/:sort?/:page?', db.getReview);
+app.get('/reviews/meta/:product_id');
+app.post('/reviews/:product_id?/:rating?/:summary?/:body?/:recommend?/:name?/:email?/:photos?/:characteristic?');
 app.put('/reviews/:review_id/helpful');
 app.put('/reviews/:review_id/report');
 
