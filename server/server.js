@@ -21,9 +21,9 @@ app.get('/', (request, response) => {
 })
 app.get('/reviews/:id/:count?/:sort?/:page?', db.getReview);
 app.get('/reviews/meta/:product_id');
-app.post('/reviews/:product_id?/:rating?/:summary?/:body?/:recommend?/:name?/:email?/:photos?/:characteristic?');
-app.put('/reviews/:review_id/helpful');
-app.put('/reviews/:review_id/report');
+app.post('/reviews', db.postNewReview);
+app.put('/reviews/:review_id/helpful', db.modifyReviewHelpful);
+app.put('/reviews/:review_id/report', db.modifyReviewReport);
 
 app.listen(port, () => {
   console.log(`listening on port ${port}`);
