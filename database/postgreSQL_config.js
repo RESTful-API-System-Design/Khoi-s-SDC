@@ -3,14 +3,103 @@ const pool = require('./database_config.js');
 /*
 
 ------------------------------------------------------------
+|                    GET META REVIEW                        |
+------------------------------------------------------------
+
+*/
+const getMetaReview = (request, response, next) => {
+  const productID = Number(request.query.product_id);
+  pool.databaseConfig.query('SELECT id, rating, recommended FROM reviews WHERE product_id = $1', [productID], (err, results) => {
+    const metaReviewData = {
+      "product_id": productID,
+      "ratings": {
+        1: '0',
+        2: '0',
+        3: '0',
+        4: '0',
+        5: '0'
+      },
+      "recommended": {
+        "true": '0',
+        "false": '0',
+      },
+      "characteristics": {}
+    };
+    if(err) {
+      throw err;
+    }
+    //Characteristic for product_id
+    pool.databaseConfig.query('SELECT id, name FROM characteristics WHERE product_id = $1', [productID], (err, characteristicData) => {
+      if(err) {
+        throw err;
+      }
+      //Find all rating for product_id
+      for(let key in metaReviewData["ratings"]) {
+        for(let i = 0; i < results.rows.length; i++) {
+          if(Number(key) === results.rows[i].rating) {
+            metaReviewData["ratings"][key]++;
+          }
+        };
+      }
+      //Recommended for product_id
+      for(let key in metaReviewData["recommended"]) {
+        for(let i = 0; i < results.rows.length; i++) {
+          if(key === "false" && results.rows[i].recommended === '1') {
+            metaReviewData["recommended"][key]++;
+          } else  if(key === "true" && results.rows[i].recommended === '0') {
+            metaReviewData["recommended"][key]++;
+          }
+        };
+      }
+      //create each characteristic as an object to store inside of metaReviewData's characteristic.
+      for(let i = 0; i < characteristicData.rows.length; i++) {
+        metaReviewData["characteristics"][characteristicData.rows[i].name] =  {
+          id: characteristicData.rows[i].id,
+          value: 0
+        };
+      }
+
+      const promise = [];
+      for(let i = 0; i < characteristicData.rows.length; i++) {
+        promise.push(pool.databaseConfig.query('SELECT characteristic_id, value FROM characteristic_reviews WHERE characteristic_id = $1', [characteristicData.rows[i].id])
+        .then(data => data.rows)
+        .catch(err => console.log('err')));
+      }
+
+      Promise.all(promise)
+      .then(value => {
+        let arrayOfValues = [];
+        for(let i = 0; i < value.length; i++) {
+          let val = value[i].reduce((a, c) => ({id:c.characteristic_id, value: a.value + c.value}));
+          val.value = val.value/value[i].length;
+          arrayOfValues.push(val);
+        }
+        for(let key in metaReviewData["characteristics"]) {
+            for(let element of arrayOfValues) {
+              if(metaReviewData["characteristics"][key].id === element.id) {
+                metaReviewData["characteristics"][key].value = element.value;
+              }
+            }
+        }
+        response.status(200).json(metaReviewData);
+      });
+    });
+  });
+};
+/*
+
+------------------------------------------------------------
 |                        GET REVIEW                        |
 ------------------------------------------------------------
 
 */
-const getReview = (request, response) => {
-  const productID = parseInt(request.params.id);
-  const count = parseInt(request.params.count);
 
+const getReview = (request, response) => {
+  //console.log(request.query.product_id);
+  const productID = Number(request.query.product_id);
+  const count = Number(request.query.count);
+  const page = Number(request.query.page);
+  //const sort = request.query.count;
   pool.databaseConfig.query(`SELECT * FROM reviews JOIN reviews_photo ON reviews.id = reviews_photo.review_id WHERE product_id = $1
                             ${count ? `FETCH FIRST ${count} ROW ONLY`: ''}`,
                             [productID], (error, results) => {
@@ -18,8 +107,8 @@ const getReview = (request, response) => {
       throw error;
     }
     const reviewData = {
-      "product":productID,
-      "page":'',
+      "product":productID.toString(),
+      "page": page ? page : 0,
       "count":count,
       "results": []
     }
@@ -30,17 +119,26 @@ const getReview = (request, response) => {
           "rating":'',
           "summary":'',
           "recommend":'',
-          "response":'',
+          "response": '',
           "body":'',
           "date":'',
           "reviewer_name":'',
           "helpfulness":'',
           "photos": []
       }
+      if(results.rows[i].recommended === "1") {
+        results.rows[i].recommended = false;
+      } else {
+        results.rows[i].recommended = true;
+      }
 
+      if(results.rows[i].response === 'null') {
+        results.rows[i].response = null;
+      }
       reviewQueryResult["review_id"] = results.rows[i].id;
       reviewQueryResult["rating"] = results.rows[i].rating;
       reviewQueryResult["summary"] = results.rows[i].summary;
+      reviewQueryResult["recommend"] = results.rows[i].recommended;
       reviewQueryResult["response"] = results.rows[i].response;
       reviewQueryResult["body"] = results.rows[i].body;
       reviewQueryResult["date"] = results.rows[i].date;
@@ -50,41 +148,17 @@ const getReview = (request, response) => {
         id: results.rows[i].photo_id,
         url: results.rows[i].url
       });
-      if(results.rows[i].recommended === 1) {
-        reviewQueryResult["recommend"] = results.rows[i][false];
-      } else {
-        reviewQueryResult["recommend"] = results.rows[i][true];
-      }
+      // if(results.rows[i].recommended === 1) {
+      //   reviewQueryResult["recommend"] = results.rows[i][false];
+      // } else {
+      //   reviewQueryResult["recommend"] = results.rows[i][true];
+      // }
       reviewData["results"].push(reviewQueryResult);
     }
-    response.status(200).json(results.rows);
+    response.status(200).json(reviewData);
   })
 }
 /*
-
-------------------------------------------------------------
-|                    GET META DATA REVIEW                  |
-------------------------------------------------------------
-
-*/
-const getMetaReview = (request, response) => {
-  pool.databaseConfig.query('', (error, results) => {
-    const metaReviewData = {
-      "product_id": "2",
-      "ratings": {},
-      "recommended": {},
-      "characteristics": {}
-    };
-
-    if(error) {
-      throw error;
-    }
-    response.status(200).json(results.rows);
-  });
-};
-
-/*
-
 ------------------------------------------------------------
 |                     POST NEW REVIEW                      |
 ------------------------------------------------------------
@@ -191,6 +265,7 @@ const modifyReviewReport = (request, response) => {
 };
 
 module.exports.getReview = getReview;
+module.exports.getMetaReview = getMetaReview;
 module.exports.postNewReview = postNewReview;
 module.exports.modifyReviewHelpful = modifyReviewHelpful;
 module.exports.modifyReviewReport = modifyReviewReport;
