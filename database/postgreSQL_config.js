@@ -7,7 +7,7 @@ const pool = require('./database_config.js');
 ------------------------------------------------------------
 
 */
-const getMetaReview = (request, response, next) => {
+const getMetaReview = (request, response) => {
   const productID = Number(request.query.product_id);
   pool.databaseConfig.query('SELECT id, rating, recommended FROM reviews WHERE product_id = $1', [productID], (err, results) => {
     const metaReviewData = {
@@ -69,6 +69,7 @@ const getMetaReview = (request, response, next) => {
       Promise.all(promise)
       .then(value => {
         let arrayOfValues = [];
+        console.log(value);
         for(let i = 0; i < value.length; i++) {
           let val = value[i].reduce((a, c) => ({id:c.characteristic_id, value: a.value + c.value}));
           val.value = val.value/value[i].length;

@@ -1,8 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const parse = require('csv-parse');
-const updateData = require('../database/mongodb_schema.js');
-const fs = require('fs');
 const db = require('../database/postgreSQL_config.js');
 const assert = require('assert');
 let port = 3000;
@@ -26,5 +24,5 @@ app.put('/reviews/:review_id/helpful', db.modifyReviewHelpful);
 app.put('/reviews/:review_id/report', db.modifyReviewReport);
 
 app.listen(port, () => {
-  console.log(`listening on port ${port}`);
+  console.log(`listening on port ${port}, postgreSQL`);
 });

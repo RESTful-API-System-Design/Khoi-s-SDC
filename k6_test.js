@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 
 export default function () {
-  var urlPosting = "http://localhost:1337/reviews";
+  var urlPosting = "http://localhost:3001/reviews";
   let payload = JSON.stringify({
     "product_id": "3",
     "rating": "5",
@@ -11,11 +11,17 @@ export default function () {
     "recommend": "true",
     "name": "test",
     "email": "testing@test.test",
-    "photos": ["testing5", "testing6"],
+    "photos": [{
+      'id': '111',
+      "url": 'urewlrpwerlwe.jpeg'
+    }, {
+      'id': '111',
+    "url": 'urewlrpwerlwe.jpeg'
+    }],
     "characteristic": {
-        "0" : "15",
-        "1" : "16",
-        "2" : "17"
+        "Fit" : "2",
+        "Size" : "5",
+        "Quality" : "2"
     }
   });
 
@@ -24,7 +30,7 @@ export default function () {
       'Content-Type': 'application/json',
     }
   }
-  //http.get('http://localhost:1337/reviews/meta?product_id=10000');
-  //sleep(1);
-  http.post(urlPosting, payload, params);
+  http.get('http://localhost:3001/reviews/meta?product_id=13023');
+  sleep(1);
+  //http.post(urlPosting, payload, params);
 }
