@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const parse = require('csv-parse');
 const db = require('../database/postgreSQL_config.js');
 const assert = require('assert');
+//const loaderio = require('../loaderio-2d2ec07ed6ecec6123084973a5ef072d.txt');
 let port = 3000;
 
 
@@ -17,6 +18,9 @@ app.use(
 app.get('/', (request, response) => {
   response.json({ info: 'Node.js, Express, and Postgres API' })
 })
+app.get('/loaderio-2d2ec07ed6ecec6123084973a5ef072d/', (req, res) => {
+  res.sendFile(__dirname + '/loader.txt');
+});
 app.get('/reviews/', db.getReview);
 app.get('/reviews/meta', db.getMetaReview);
 app.post('/reviews', db.postNewReview);
